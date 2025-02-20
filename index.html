@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R-World Core</title>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        async function fetchData(endpoint) {
+            const response = await fetch(`https://your-database-api.com/${endpoint}`);
+            return response.json();
+        }
+
+        async function loadContent() {
+            const content = await fetchData("core-data");
+            document.getElementById("core-content").innerHTML = `<h2>${content.title}</h2><p>${content.description}</p>`;
+        }
+
+        async function updateContent() {
+            let newTitle = prompt("Enter new title:");
+            let newDescription = prompt("Enter new description:");
+            
+            if (newTitle && newDescription) {
+                await fetch("https://your-database-api.com/update-core", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title: newTitle, description: newDescription })
+                });
+                alert("Core updated!");
+                loadContent();
+            }
+        }
+    </script>
+</head>
+<body onload="loadContent()">
+    <header>
+        <h1>R-World Core</h1>
+        <nav>
+            <button onclick="updateContent()">Edit Core</button>
+        </nav>
+    </header>
+    
+    <section id="core-content">
+        <h2>Loading...</h2>
+    </section>
+    
+    <footer>
+        <p>&copy; 2025 R-World. All rights reserved.</p>
+    </footer>
+</body>
+</html>
