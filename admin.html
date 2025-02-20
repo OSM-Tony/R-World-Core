@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R-World Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        async function fetchData(endpoint) {
+            const response = await fetch(`https://your-database-api.com/${endpoint}`);
+            return response.json();
+        }
+
+        async function loadCoreData() {
+            const content = await fetchData("core-data");
+            document.getElementById("core-title").value = content.title;
+            document.getElementById("core-description").value = content.description;
+        }
+
+        async function updateCoreData() {
+            let newTitle = document.getElementById("core-title").value;
+            let newDescription = document.getElementById("core-description").value;
+
+            if (newTitle && newDescription) {
+                await fetch("https://your-database-api.com/update-core", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title: newTitle, description: newDescription })
+                });
+                alert("Core updated!");
+            }
+        }
+    </script>
+</head>
+<body onload="loadCoreData()">
+    <header>
+        <h1>R-World Admin Panel</h1>
+    </header>
+    
+    <section>
+        <label for="core-title">Core Title:</label>
+        <input type="text" id="core-title" value="Loading...">
+
+        <label for="core-description">Core Description:</label>
+        <textarea id="core-description">Loading...</textarea>
+
+        <button onclick="updateCoreData()">Save Changes</button>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 R-World Admin Panel. All rights reserved.</p>
+    </footer>
+</body>
+</html>
