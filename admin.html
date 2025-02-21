@@ -5,16 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>R-World Admin Panel</title>
     <link rel="stylesheet" href="styles.css">
-    <script>
-        async function fetchData(endpoint) {
-            const response = await fetch(`https://your-database-api.com/${endpoint}`);
-            return response.json();
-        }
+    <script type="module">
+        // Import Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.9.3/firebase-app.js";
+        import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.9.3/firebase-database.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCImKSrWlWkHBPZe1-g--jcl_xthZyORhI",
+            authDomain: "r-world-core.firebaseapp.com",
+            databaseURL: "https://r-world-core-default-rtdb.firebaseio.com/",
+            projectId: "r-world-core",
+            storageBucket: "r-world-core.firebasestorage.app",
+            messagingSenderId: "335093562897",
+            appId: "1:335093562897:web:f2be99bb04eb06d2123bb0",
+            measurementId: "G-ZMXF2QEBXQ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
         async function loadCoreData() {
-            const content = await fetchData("core-data");
-            document.getElementById("core-title").value = content.title;
-            document.getElementById("core-description").value = content.description;
+            const dbRef = ref(database, "core-data");
+            get(dbRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    document.getElementById("core-title").value = snapshot.val().title;
+                    document.getElementById("core-description").value = snapshot.val().description;
+                } else {
+                    console.log("No data available");
+                }
+            }).catch((error) => {
+                console.error("Error fetching data:", error);
+            });
         }
 
         async function updateCoreData() {
@@ -22,12 +45,14 @@
             let newDescription = document.getElementById("core-description").value;
 
             if (newTitle && newDescription) {
-                await fetch("https://your-database-api.com/update-core", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ title: newTitle, description: newDescription })
+                set(ref(database, "core-data"), {
+                    title: newTitle,
+                    description: newDescription
+                }).then(() => {
+                    alert("Core updated successfully!");
+                }).catch((error) => {
+                    console.error("Error updating data:", error);
                 });
-                alert("Core updated!");
             }
         }
     </script>
