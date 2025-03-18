@@ -3,49 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R-World Core</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>R-World Core Database Console</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+    <h1>R-World Core Database Command Console</h1>
+    <p>Enter Firebase Database command (in JSON format):</p>
+    <textarea id="commandInput" rows="10" cols="80" placeholder='{"path": "/example", "data": {"key": "value"}}'></textarea><br>
+    <button onclick="executeCommand()">Execute Command</button>
+    <p id="result"></p>
+
     <script>
-        async function fetchData(endpoint) {
-            const response = await fetch(`https://your-database-api.com/${endpoint}`);
-            return response.json();
-        }
+        // Your Firebase config here:
+        var firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
-        async function loadContent() {
-            const content = await fetchData("core-data");
-            document.getElementById("core-content").innerHTML = `<h2>${content.title}</h2><p>${content.description}</p>`;
-        }
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
 
-        async function updateContent() {
-            let newTitle = prompt("Enter new title:");
-            let newDescription = prompt("Enter new description:");
-            
-            if (newTitle && newDescription) {
-                await fetch("https://your-database-api.com/update-core", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ title: newTitle, description: newDescription })
+        function executeCommand() {
+            const input = document.getElementById('commandInput').value;
+            const output = document.getElementById('result');
+            try {
+                const command = JSON.parse(input);
+                const ref = firebase.database().ref(command.path);
+                ref.set(command.data).then(() => {
+                    output.textContent = "Command executed successfully.";
+                }).catch(err => {
+                    output.textContent = "Error executing command: " + err;
                 });
-                alert("Core updated!");
-                loadContent();
+            } catch (err) {
+                output.textContent = "Invalid JSON or error: " + err;
             }
         }
     </script>
-</head>
-<body onload="loadContent()">
-    <header>
-        <h1>R-World Core</h1>
-        <nav>
-            <button onclick="updateContent()">Edit Core</button>
-        </nav>
-    </header>
-    
-    <section id="core-content">
-        <h2>Loading...</h2>
-    </section>
-    
-    <footer>
-        <p>&copy; 2025 R-World. All rights reserved.</p>
-    </footer>
 </body>
 </html>
