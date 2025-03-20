@@ -3,47 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R-World Core Database Console</title>
+    <title>R-World Core Dynamic Site</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        section { margin-bottom: 20px; }
+        h2 { color: #333; }
+        p { line-height: 1.5; }
+        button { padding: 10px 20px; margin-top: 10px; }
+    </style>
 </head>
 <body>
-    <h1>R-World Core Database Command Console</h1>
-    <p>Enter Firebase Database command (in JSON format):</p>
-    <textarea id="commandInput" rows="10" cols="80" placeholder='{"path": "/example", "data": {"key": "value"}}'></textarea><br>
-    <button onclick="executeCommand()">Execute Command</button>
-    <p id="result"></p>
+    <h1>R-World Dynamic Site</h1>
+    <div id="content">Loading site content...</div>
 
     <script>
-        // Your Firebase config here:
-        var firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+        const firebaseConfig = {
+            apiKey: "AIzaSyCImKSrWlWkHBPZe1-g--jcl_xthZyORhI",
+            authDomain: "r-world-core.firebaseapp.com",
+            databaseURL: "https://r-world-core-default-rtdb.firebaseio.com",
+            projectId: "r-world-core",
+            storageBucket: "r-world-core.firebasestorage.app",
+            messagingSenderId: "335093562897",
+            appId: "1:335093562897:web:f2be99bb04eb06d2123bb0",
+            measurementId: "G-ZMXF2QEBXQ"
         };
-
-        // Initialize Firebase
+        
         firebase.initializeApp(firebaseConfig);
 
-        function executeCommand() {
-            const input = document.getElementById('commandInput').value;
-            const output = document.getElementById('result');
-            try {
-                const command = JSON.parse(input);
-                const ref = firebase.database().ref(command.path);
-                ref.set(command.data).then(() => {
-                    output.textContent = "Command executed successfully.";
-                }).catch(err => {
-                    output.textContent = "Error executing command: " + err;
+        function loadContent() {
+            const contentDiv = document.getElementById('content');
+            firebase.database().ref('/site/body').once('value').then(snapshot => {
+                const contentData = snapshot.val();
+                if (!contentData || !contentData.sections) {
+                    contentDiv.textContent = "No site content found in database.";
+                    return;
+                }
+                contentDiv.innerHTML = '';
+                contentData.sections.forEach(section => {
+                    const sec = document.createElement('section');
+                    const heading = document.createElement('h2');
+                    heading.textContent = section.heading;
+                    sec.appendChild(heading);
+
+                    section.paragraphs.forEach(pText => {
+                        const p = document.createElement('p');
+                        p.textContent = pText;
+                        sec.appendChild(p);
+                    });
+
+                    if(section.button) {
+                        const btn = document.createElement('button');
+                        btn.textContent = section.button.text;
+                        btn.onclick = () => window.location.href = section.button.link;
+                        sec.appendChild(btn);
+                    }
+
+                    contentDiv.appendChild(sec);
                 });
-            } catch (err) {
-                output.textContent = "Invalid JSON or error: " + err;
-            }
+            }).catch(err => {
+                contentDiv.textContent = "Error loading content: " + err;
+            });
         }
+
+        window.onload = loadContent;
     </script>
+
 </body>
 </html>
