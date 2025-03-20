@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R-World Core Dynamic Site</title>
+    <title>R-World Core Dynamic Site with Input</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
@@ -12,14 +12,21 @@
         h2 { color: #333; }
         p { line-height: 1.5; }
         button { padding: 10px 20px; margin-top: 10px; }
+        textarea { width: 100%; height: 150px; margin-top: 20px; }
+        #executeBtn { margin-top: 10px; }
     </style>
 </head>
 <body>
     <h1>R-World Dynamic Site</h1>
     <div id="content">Loading site content...</div>
 
+    <h3>Database Command Input</h3>
+    <textarea id="commandInput" placeholder='{"path": "/site/body", "data": {"sections": [...]}}'></textarea><br>
+    <button id="executeBtn" onclick="executeCommand()">Execute Command</button>
+    <p id="result"></p>
+
     <script>
-        const firebaseConfig = {
+        var firebaseConfig = {
             apiKey: "AIzaSyCImKSrWlWkHBPZe1-g--jcl_xthZyORhI",
             authDomain: "r-world-core.firebaseapp.com",
             databaseURL: "https://r-world-core-default-rtdb.firebaseio.com",
@@ -29,7 +36,7 @@
             appId: "1:335093562897:web:f2be99bb04eb06d2123bb0",
             measurementId: "G-ZMXF2QEBXQ"
         };
-        
+
         firebase.initializeApp(firebaseConfig);
 
         function loadContent() {
@@ -53,7 +60,7 @@
                         sec.appendChild(p);
                     });
 
-                    if(section.button) {
+                    if (section.button) {
                         const btn = document.createElement('button');
                         btn.textContent = section.button.text;
                         btn.onclick = () => window.location.href = section.button.link;
@@ -67,8 +74,24 @@
             });
         }
 
+        function executeCommand() {
+            const input = document.getElementById('commandInput').value;
+            const output = document.getElementById('result');
+            try {
+                const command = JSON.parse(input);
+                const ref = firebase.database().ref(command.path);
+                ref.set(command.data).then(() => {
+                    output.textContent = "Command executed successfully.";
+                    loadContent();
+                }).catch(err => {
+                    output.textContent = "Error executing command: " + err;
+                });
+            } catch (err) {
+                output.textContent = "Invalid JSON or error: " + err;
+            }
+        }
+
         window.onload = loadContent;
     </script>
-
 </body>
 </html>
