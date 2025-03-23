@@ -3,27 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R-World Core Dynamic Site with Input</title>
+    <title>R-World Core Dynamic Site — Fully Database Driven</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        section { margin-bottom: 20px; }
-        h2 { color: #333; }
-        p { line-height: 1.5; }
-        button { padding: 10px 20px; margin-top: 10px; }
-        textarea { width: 100%; height: 150px; margin-top: 20px; }
-        #executeBtn { margin-top: 10px; }
-    </style>
 </head>
 <body>
-    <h1>R-World Dynamic Site</h1>
-    <div id="content">Loading site content...</div>
-
-    <h3>Database Command Input</h3>
-    <textarea id="commandInput" placeholder='{"path": "/site/body", "data": {"sections": [...]}}'></textarea><br>
-    <button id="executeBtn" onclick="executeCommand()">Execute Command</button>
-    <p id="result"></p>
+    <div id="contentArea">Loading site logic and styles from database...</div>
 
     <script>
         var firebaseConfig = {
@@ -39,59 +24,31 @@
 
         firebase.initializeApp(firebaseConfig);
 
-        function loadContent() {
-            const contentDiv = document.getElementById('content');
-            firebase.database().ref('/site/body').once('value').then(snapshot => {
-                const contentData = snapshot.val();
-                if (!contentData || !contentData.sections) {
-                    contentDiv.textContent = "No site content found in database.";
-                    return;
-                }
-                contentDiv.innerHTML = '';
-                contentData.sections.forEach(section => {
-                    const sec = document.createElement('section');
-                    const heading = document.createElement('h2');
-                    heading.textContent = section.heading;
-                    sec.appendChild(heading);
+        function loadDynamicContent() {
+            firebase.database().ref('/site/indexLogic').once('value').then(snapshot => {
+                const logicData = snapshot.val();
 
-                    section.paragraphs.forEach(pText => {
-                        const p = document.createElement('p');
-                        p.textContent = pText;
-                        sec.appendChild(p);
-                    });
-
-                    if (section.button) {
-                        const btn = document.createElement('button');
-                        btn.textContent = section.button.text;
-                        btn.onclick = () => window.location.href = section.button.link;
-                        sec.appendChild(btn);
+                if (logicData) {
+                    if (logicData.css) {
+                        const styleElement = document.createElement('style');
+                        styleElement.textContent = logicData.css;
+                        document.head.appendChild(styleElement);
                     }
 
-                    contentDiv.appendChild(sec);
-                });
+                    if (logicData.jsCode) {
+                        eval(logicData.jsCode);
+                    } else {
+                        document.getElementById('contentArea').innerText = "No logic code found in database.";
+                    }
+                } else {
+                    document.getElementById('contentArea').innerText = "No logic structure found in database.";
+                }
             }).catch(err => {
-                contentDiv.textContent = "Error loading content: " + err;
+                document.getElementById('contentArea').innerText = "Error loading logic: " + err;
             });
         }
 
-        function executeCommand() {
-            const input = document.getElementById('commandInput').value;
-            const output = document.getElementById('result');
-            try {
-                const command = JSON.parse(input);
-                const ref = firebase.database().ref(command.path);
-                ref.set(command.data).then(() => {
-                    output.textContent = "Command executed successfully.";
-                    loadContent();
-                }).catch(err => {
-                    output.textContent = "Error executing command: " + err;
-                });
-            } catch (err) {
-                output.textContent = "Invalid JSON or error: " + err;
-            }
-        }
-
-        window.onload = loadContent;
+        window.onload = loadDynamicContent;
     </script>
 </body>
 </html>
