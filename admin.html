@@ -3,18 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R-World Admin Panel</title>
-    <link rel="stylesheet" href="styles.css">
-    <script type="module">
-        // Import Firebase SDK
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.9.3/firebase-app.js";
-        import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.9.3/firebase-database.js";
+    <title>R-World Core — Command Line Interface Safe Mode</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <style>
+        body { margin: 0; font-family: sans-serif; background-color: #f5f5f5; }
+        #viewArea { height: calc(100vh - 50px); overflow: auto; padding: 10px; }
+        #commandLine { position: fixed; bottom: 0; left: 0; width: 100%; background: #333; padding: 5px; }
+        #commandLine input { width: 95%; padding: 8px; border: none; color: #fff; background: #444; }
+        #commandLine button { padding: 8px; border: none; background: #555; color: #fff; cursor: pointer; }
+        #consoleOutput { font-size: 12px; color: #0a0; background: #111; padding: 5px; overflow-y: auto; max-height: 150px; }
+    </style>
+</head>
+<body>
+    <div id="viewArea">R-World Safe Mode Loaded. Use the command line below.</div>
+    <div id="consoleOutput"></div>
+    <div id="commandLine">
+        <input id="cmdInput" type="text" placeholder="Enter command here...">
+        <button onclick="executeCommand()">Run</button>
+    </div>
 
-        // Firebase Configuration
-        const firebaseConfig = {
+    <script>
+        var firebaseConfig = {
             apiKey: "AIzaSyCImKSrWlWkHBPZe1-g--jcl_xthZyORhI",
             authDomain: "r-world-core.firebaseapp.com",
-            databaseURL: "https://r-world-core-default-rtdb.firebaseio.com/",
+            databaseURL: "https://r-world-core-default-rtdb.firebaseio.com",
             projectId: "r-world-core",
             storageBucket: "r-world-core.firebasestorage.app",
             messagingSenderId: "335093562897",
@@ -22,58 +36,37 @@
             measurementId: "G-ZMXF2QEBXQ"
         };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+        firebase.initializeApp(firebaseConfig);
 
-        async function loadCoreData() {
-            const dbRef = ref(database, "core-data");
-            get(dbRef).then((snapshot) => {
-                if (snapshot.exists()) {
-                    document.getElementById("core-title").value = snapshot.val().title;
-                    document.getElementById("core-description").value = snapshot.val().description;
+        function logToConsole(msg) {
+            const output = document.getElementById('consoleOutput');
+            output.innerHTML += `> ${msg}<br>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function executeCommand() {
+            const input = document.getElementById('cmdInput').value;
+            logToConsole(input);
+            try {
+                const cmd = JSON.parse(input);
+                if (cmd.path && cmd.data) {
+                    firebase.database().ref(cmd.path).set(cmd.data).then(() => {
+                        logToConsole('Database updated successfully.');
+                    }).catch(err => {
+                        logToConsole('Database write error: ' + err);
+                    });
                 } else {
-                    console.log("No data available");
+                    logToConsole('Invalid command structure.');
                 }
-            }).catch((error) => {
-                console.error("Error fetching data:", error);
-            });
-        }
-
-        async function updateCoreData() {
-            let newTitle = document.getElementById("core-title").value;
-            let newDescription = document.getElementById("core-description").value;
-
-            if (newTitle && newDescription) {
-                set(ref(database, "core-data"), {
-                    title: newTitle,
-                    description: newDescription
-                }).then(() => {
-                    alert("Core updated successfully!");
-                }).catch((error) => {
-                    console.error("Error updating data:", error);
-                });
+            } catch (e) {
+                logToConsole('JSON parse error: ' + e);
             }
+            document.getElementById('cmdInput').value = '';
         }
+
+        document.getElementById('cmdInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') executeCommand();
+        });
     </script>
-</head>
-<body onload="loadCoreData()">
-    <header>
-        <h1>R-World Admin Panel</h1>
-    </header>
-    
-    <section>
-        <label for="core-title">Core Title:</label>
-        <input type="text" id="core-title" value="Loading...">
-
-        <label for="core-description">Core Description:</label>
-        <textarea id="core-description">Loading...</textarea>
-
-        <button onclick="updateCoreData()">Save Changes</button>
-    </section>
-
-    <footer>
-        <p>&copy; 2025 R-World Admin Panel. All rights reserved.</p>
-    </footer>
 </body>
 </html>
