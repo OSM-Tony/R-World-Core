@@ -9,11 +9,11 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <style>
         body { margin: 0; font-family: sans-serif; background-color: #f5f5f5; }
-        #viewArea { height: calc(100vh - 50px); overflow: auto; padding: 10px; }
-        #commandLine { position: fixed; bottom: 0; left: 0; width: 100%; background: #333; padding: 5px; }
-        #commandLine input { width: 95%; padding: 8px; border: none; color: #fff; background: #444; }
+        #viewArea { height: calc(100vh - 200px); overflow: auto; padding: 10px; background: #fafafa; }
+        #consoleOutput { font-size: 12px; color: #0a0; background: #111; padding: 10px; overflow-y: auto; max-height: 150px; }
+        #commandLine { position: fixed; bottom: 0; left: 0; width: 100%; background: #333; padding: 5px; display: flex; }
+        #commandLine input { flex: 1; padding: 8px; border: none; color: #fff; background: #444; }
         #commandLine button { padding: 8px; border: none; background: #555; color: #fff; cursor: pointer; }
-        #consoleOutput { font-size: 12px; color: #0a0; background: #111; padding: 5px; overflow-y: auto; max-height: 150px; }
     </style>
 </head>
 <body>
@@ -38,6 +38,10 @@
 
         firebase.initializeApp(firebaseConfig);
 
+        firebase.auth().signInWithEmailAndPassword('rworlddev@gmail.com', 'vancouverhl119!')
+            .then(() => logToConsole('Signed in successfully.'))
+            .catch((error) => logToConsole('Authentication error: ' + error.message));
+
         function logToConsole(msg) {
             const output = document.getElementById('consoleOutput');
             output.innerHTML += `> ${msg}<br>`;
@@ -46,17 +50,18 @@
 
         function executeCommand() {
             const input = document.getElementById('cmdInput').value;
-            logToConsole(input);
+            logToConsole('Received command: ' + input);
             try {
                 const cmd = JSON.parse(input);
-                if (cmd.path && cmd.data) {
+                if (cmd.path && (cmd.data !== undefined)) {
+                    logToConsole(`Attempting to write to ${cmd.path}`);
                     firebase.database().ref(cmd.path).set(cmd.data).then(() => {
-                        logToConsole('Database updated successfully.');
+                        logToConsole('Database updated successfully at ' + cmd.path);
                     }).catch(err => {
                         logToConsole('Database write error: ' + err);
                     });
                 } else {
-                    logToConsole('Invalid command structure.');
+                    logToConsole('Invalid command structure. JSON requires both path and data.');
                 }
             } catch (e) {
                 logToConsole('JSON parse error: ' + e);
@@ -70,3 +75,4 @@
     </script>
 </body>
 </html>
+
