@@ -3,13 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R-World Core Dynamic Site — Fully Database Driven</title>
+    <title>R-World Core Dynamic Site</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #222; color: #fff; }
+        #contentArea { height: calc(100vh - 40px); display: flex; align-items: center; justify-content: center; }
+        #commandLineContainer { position: fixed; bottom: 0; width: 100%; background: #333; padding: 10px; display: flex; }
+        #commandInput { flex-grow: 1; background: #111; border: none; color: #fff; padding: 5px; }
+        #executeBtn { background: #555; border: none; color: white; padding: 5px 10px; cursor: pointer; }
+    </style>
 </head>
 <body>
-    <div id="contentArea">Loading site logic and styles from database...</div>
+    <div id="contentArea">Loading site logic...</div>
+    
+    <div id="commandLineContainer">
+        <input type="text" id="commandInput" placeholder="Enter command...">
+        <button id="executeBtn">Execute</button>
+    </div>
 
     <script>
         var firebaseConfig = {
@@ -22,20 +34,17 @@
             appId: "1:335093562897:web:f2be99bb04eb06d2123bb0",
             measurementId: "G-ZMXF2QEBXQ"
         };
-
         firebase.initializeApp(firebaseConfig);
-
+        
         function loadDynamicContent() {
             firebase.database().ref('/site/indexLogic').once('value').then(snapshot => {
                 const logicData = snapshot.val();
-
                 if (logicData) {
                     if (logicData.css) {
                         const styleElement = document.createElement('style');
                         styleElement.textContent = logicData.css;
                         document.head.appendChild(styleElement);
                     }
-
                     if (logicData.jsCode) {
                         eval(logicData.jsCode);
                     } else {
@@ -48,8 +57,16 @@
                 document.getElementById('contentArea').innerText = "Error loading logic: " + err;
             });
         }
-
         window.onload = loadDynamicContent;
+        
+        document.getElementById('executeBtn').addEventListener('click', function() {
+            let command = document.getElementById('commandInput').value;
+            if (command) {
+                console.log("Executing: ", command);
+                firebase.database().ref('/commands').push({ command: command, timestamp: Date.now() });
+                document.getElementById('commandInput').value = '';
+            }
+        });
     </script>
 </body>
 </html>
