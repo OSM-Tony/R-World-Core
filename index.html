@@ -3,24 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R-World Core Dynamic Site</title>
+    <title>R-World Core — Command Line Interface Safe Mode</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #222; color: #fff; }
-        #contentArea { height: calc(100vh - 40px); display: flex; align-items: center; justify-content: center; }
-        #commandLineContainer { position: fixed; bottom: 0; width: 100%; background: #333; padding: 10px; display: flex; }
-        #commandInput { flex-grow: 1; background: #111; border: none; color: #fff; padding: 5px; }
-        #executeBtn { background: #555; border: none; color: white; padding: 5px 10px; cursor: pointer; }
+        body { margin: 0; font-family: sans-serif; background-color: #f5f5f5; }
+        #viewArea { height: calc(100vh - 200px); overflow: auto; padding: 10px; background: #fafafa; }
+        #consoleOutput { font-size: 12px; color: #0a0; background: #111; padding: 10px; overflow-y: auto; max-height: 150px; }
+        #commandLine { position: fixed; bottom: 0; left: 0; width: 100%; background: #333; padding: 5px; display: flex; }
+        #commandLine input { flex: 1; padding: 8px; border: none; color: #fff; background: #444; }
+        #commandLine button { padding: 8px; border: none; background: #555; color: #fff; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div id="contentArea">Loading site logic...</div>
-    
-    <div id="commandLineContainer">
-        <input type="text" id="commandInput" placeholder="Enter command...">
-        <button id="executeBtn">Execute</button>
+    <div id="viewArea">R-World Safe Mode Loaded. Use the command line below.</div>
+    <div id="consoleOutput"></div>
+    <div id="commandLine">
+        <input id="cmdInput" type="text" placeholder="Enter command here...">
+        <button onclick="executeCommand()">Run</button>
     </div>
 
     <script>
@@ -34,38 +35,42 @@
             appId: "1:335093562897:web:f2be99bb04eb06d2123bb0",
             measurementId: "G-ZMXF2QEBXQ"
         };
+
         firebase.initializeApp(firebaseConfig);
-        
-        function loadDynamicContent() {
-            firebase.database().ref('/site/indexLogic').once('value').then(snapshot => {
-                const logicData = snapshot.val();
-                if (logicData) {
-                    if (logicData.css) {
-                        const styleElement = document.createElement('style');
-                        styleElement.textContent = logicData.css;
-                        document.head.appendChild(styleElement);
-                    }
-                    if (logicData.jsCode) {
-                        eval(logicData.jsCode);
-                    } else {
-                        document.getElementById('contentArea').innerText = "No logic code found in database.";
-                    }
-                } else {
-                    document.getElementById('contentArea').innerText = "No logic structure found in database.";
-                }
-            }).catch(err => {
-                document.getElementById('contentArea').innerText = "Error loading logic: " + err;
-            });
+
+        firebase.auth().signInWithEmailAndPassword('rworlddev@gmail.com', 'vancouverhl119!')
+            .then(() => logToConsole('Signed in successfully.'))
+            .catch((error) => logToConsole('Authentication error: ' + error.message));
+
+        function logToConsole(msg) {
+            const output = document.getElementById('consoleOutput');
+            output.innerHTML += `> ${msg}<br>`;
+            output.scrollTop = output.scrollHeight;
         }
-        window.onload = loadDynamicContent;
-        
-        document.getElementById('executeBtn').addEventListener('click', function() {
-            let command = document.getElementById('commandInput').value;
-            if (command) {
-                console.log("Executing: ", command);
-                firebase.database().ref('/commands').push({ command: command, timestamp: Date.now() });
-                document.getElementById('commandInput').value = '';
+
+        function executeCommand() {
+            const input = document.getElementById('cmdInput').value;
+            logToConsole('Received command: ' + input);
+            try {
+                const cmd = JSON.parse(input);
+                if (cmd.path && (cmd.data !== undefined)) {
+                    logToConsole(`Attempting to write to ${cmd.path}`);
+                    firebase.database().ref(cmd.path).set(cmd.data).then(() => {
+                        logToConsole('Database updated successfully at ' + cmd.path);
+                    }).catch(err => {
+                        logToConsole('Database write error: ' + err);
+                    });
+                } else {
+                    logToConsole('Invalid command structure. JSON requires both path and data.');
+                }
+            } catch (e) {
+                logToConsole('JSON parse error: ' + e);
             }
+            document.getElementById('cmdInput').value = '';
+        }
+
+        document.getElementById('cmdInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') executeCommand();
         });
     </script>
 </body>
