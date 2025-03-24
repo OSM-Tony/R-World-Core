@@ -8,16 +8,19 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <style>
-        body { margin: 0; font-family: sans-serif; background-color: #f5f5f5; }
-        #viewArea { height: calc(100vh - 200px); overflow: auto; padding: 10px; background: #fafafa; }
-        #consoleOutput { font-size: 12px; color: #0a0; background: #111; padding: 10px; overflow-y: auto; max-height: 150px; }
-        #commandLine { position: fixed; bottom: 0; left: 0; width: 100%; background: #333; padding: 5px; display: flex; }
+        body { margin: 0; font-family: sans-serif; background-color: #f5f5f5; display: flex; flex-direction: column; height: 100vh; }
+        #buttonBar { background: #222; padding: 5px; display: flex; gap: 10px; }
+        #buttonBar button { background: #555; color: #fff; border: none; padding: 8px 12px; cursor: pointer; }
+        #consoleOutput { flex: 1; font-size: 12px; color: #0a0; background: #111; padding: 10px; overflow-y: auto; }
+        #commandLine { background: #333; padding: 5px; display: flex; }
         #commandLine input { flex: 1; padding: 8px; border: none; color: #fff; background: #444; }
         #commandLine button { padding: 8px; border: none; background: #555; color: #fff; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div id="viewArea">R-World Safe Mode Loaded. Use the command line below.</div>
+    <div id="buttonBar">
+        <button id="toggleJsonBtn" onclick="toggleJsonLogging()">JSON Logging: ON</button>
+    </div>
     <div id="consoleOutput"></div>
     <div id="commandLine">
         <input id="cmdInput" type="text" placeholder="Enter command here...">
@@ -36,6 +39,8 @@
             measurementId: "G-ZMXF2QEBXQ"
         };
 
+        let jsonLoggingEnabled = true;
+
         firebase.initializeApp(firebaseConfig);
 
         firebase.auth().signInWithEmailAndPassword('rworlddev@gmail.com', 'vancouverhl119!')
@@ -50,13 +55,13 @@
 
         function executeCommand() {
             const input = document.getElementById('cmdInput').value;
-            logToConsole('Received command: ' + input);
+            if (jsonLoggingEnabled) logToConsole('Received command: ' + input);
             try {
                 const cmd = JSON.parse(input);
                 if (cmd.path && (cmd.data !== undefined)) {
-                    logToConsole(`Attempting to write to ${cmd.path}`);
+                    if (jsonLoggingEnabled) logToConsole(`Attempting to write to ${cmd.path}`);
                     firebase.database().ref(cmd.path).set(cmd.data).then(() => {
-                        logToConsole('Database updated successfully at ' + cmd.path);
+                        if (jsonLoggingEnabled) logToConsole('Database updated successfully at ' + cmd.path);
                     }).catch(err => {
                         logToConsole('Database write error: ' + err);
                     });
@@ -67,6 +72,12 @@
                 logToConsole('JSON parse error: ' + e);
             }
             document.getElementById('cmdInput').value = '';
+        }
+
+        function toggleJsonLogging() {
+            jsonLoggingEnabled = !jsonLoggingEnabled;
+            document.getElementById('toggleJsonBtn').innerText = `JSON Logging: ${jsonLoggingEnabled ? 'ON' : 'OFF'}`;
+            logToConsole(`JSON logging turned ${jsonLoggingEnabled ? 'ON' : 'OFF'}.`);
         }
 
         document.getElementById('cmdInput').addEventListener('keypress', function (e) {
