@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R-World Core — Command Line Interface Safe Mode</title>
+    <title>R-World Core — Command Line Interface Safe Mode with Database View Prep</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -30,6 +30,7 @@
         <button id="jsonLogBtn" class="btn-on" onclick="toggleLog('json')">JSON</button>
         <button id="systemLogBtn" class="btn-on" onclick="toggleLog('system')">SYSTEM</button>
         <button id="errorLogBtn" class="btn-on" onclick="toggleLog('error')">ERROR</button>
+        <button onclick="loadDatabaseView()">Database View</button>
     </div>
     <div id="commandLine">
         <input id="cmdInput" type="text" placeholder="Enter command here...">
@@ -107,9 +108,26 @@
             });
         }
 
+        // Load Database View - retrieves and evals soft-coded functions from database
+        function loadDatabaseView() {
+            systemLog('Loading Database View...');
+            firebase.database().ref('/views/databaseViewScript').once('value').then(snapshot => {
+                const script = snapshot.val();
+                if (script) {
+                    systemLog('Database View script loaded from database. Executing...');
+                    eval(script);
+                } else {
+                    errorLog('No database view script found in database.');
+                }
+            }).catch(err => {
+                errorLog('Error loading database view script: ' + err);
+            });
+        }
+
         document.getElementById('cmdInput').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') executeCommand();
         });
     </script>
 </body>
 </html>
+
