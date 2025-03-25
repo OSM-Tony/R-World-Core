@@ -9,7 +9,12 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <style>
         body { margin: 0; font-family: sans-serif; background-color: #f5f5f5; display: flex; flex-direction: column; height: 100vh; }
-        #consoleOutput { flex: 1; font-size: 12px; color: #0a0; background: #111; padding: 10px; overflow-y: auto; }
+        #consoleOutput { flex: 1; font-size: 12px; background: #111; padding: 10px; overflow-y: auto; }
+        .log-entry { margin-bottom: 4px; }
+        .json-log { color: #0f0; }
+        .system-log { color: #00bfff; }
+        .error-log { color: #ff4444; }
+        .hidden-log { display: none; }
         #buttonBar { background: #222; padding: 5px; display: flex; gap: 10px; justify-content: center; }
         #buttonBar button { border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; }
         .btn-on { background-color: #28a745; color: #fff; }
@@ -25,7 +30,6 @@
         <button id="jsonLogBtn" class="btn-on" onclick="toggleLog('json')">JSON</button>
         <button id="systemLogBtn" class="btn-on" onclick="toggleLog('system')">SYSTEM</button>
         <button id="errorLogBtn" class="btn-on" onclick="toggleLog('error')">ERROR</button>
-        <!-- Future dynamic buttons will load here -->
     </div>
     <div id="commandLine">
         <input id="cmdInput" type="text" placeholder="Enter command here...">
@@ -49,18 +53,21 @@
         firebase.initializeApp(firebaseConfig);
 
         firebase.auth().signInWithEmailAndPassword('rworlddev@gmail.com', 'vancouverhl119!')
-            .then(() => systemLog('Signed in successfully.'))
-            .catch((error) => systemLog('Authentication error: ' + error.message));
+            .then(() => addLog('Signed in successfully.', 'system'))
+            .catch((error) => addLog('Authentication error: ' + error.message, 'system'));
 
-        function logToConsole(msg) {
+        function addLog(message, type) {
             const output = document.getElementById('consoleOutput');
-            output.innerHTML += `> ${msg}<br>`;
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}-log ${logSettings[type] ? '' : 'hidden-log'}`;
+            logEntry.textContent = `[${type.toUpperCase()}] ${message}`;
+            output.appendChild(logEntry);
             output.scrollTop = output.scrollHeight;
         }
 
-        function jsonLog(msg) { if (logSettings.json) logToConsole(msg); }
-        function systemLog(msg) { if (logSettings.system) logToConsole('[SYSTEM] ' + msg); }
-        function errorLog(msg) { if (logSettings.error) logToConsole('[ERROR] ' + msg); }
+        function jsonLog(msg) { addLog(msg, 'json'); }
+        function systemLog(msg) { addLog(msg, 'system'); }
+        function errorLog(msg) { addLog(msg, 'error'); }
 
         function executeCommand() {
             const input = document.getElementById('cmdInput').value;
@@ -84,10 +91,20 @@
         }
 
         function toggleLog(type) {
+            if (!logSettings[type]) systemLog(`${type.toUpperCase()} logging was off, re-enabling.`);
+            else systemLog(`${type.toUpperCase()} logging now hiding entries.`);
+
             logSettings[type] = !logSettings[type];
             const button = document.getElementById(`${type}LogBtn`);
             button.className = logSettings[type] ? 'btn-on' : 'btn-off';
-            systemLog(`${type.toUpperCase()} logging turned ${logSettings[type] ? 'ON' : 'OFF'}.`);
+
+            document.querySelectorAll(`.${type}-log`).forEach(entry => {
+                if (logSettings[type]) {
+                    entry.classList.remove('hidden-log');
+                } else {
+                    entry.classList.add('hidden-log');
+                }
+            });
         }
 
         document.getElementById('cmdInput').addEventListener('keypress', function (e) {
