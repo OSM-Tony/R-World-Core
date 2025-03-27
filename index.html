@@ -26,7 +26,7 @@
 </head>
 <body>
   <div id="consoleOutput"></div>
-  <div id="buttonBar">
+  <div id="buttonBar" style="display: none;">
     <button id="jsonLogBtn" class="btn-on" onclick="toggleLog('json')">JSON</button>
     <button id="systemLogBtn" class="btn-on" onclick="toggleLog('system')">SYSTEM</button>
     <button id="errorLogBtn" class="btn-on" onclick="toggleLog('error')">ERROR</button>
@@ -106,12 +106,14 @@
     }
 
     function loadCoreCommandEngine(initialCommand) {
+      document.getElementById('buttonBar').style.display = 'none';
       firebase.database().ref('/views/coreCommandEngineBase64').once('value').then(snapshot => {
         const encoded = snapshot.val();
         if (encoded) {
           try {
             eval(atob(encoded));
             if (initialCommand) handleCommand(initialCommand);
+            if (initialCommand === '/VIEW CONSOLE') document.getElementById('buttonBar').style.display = 'flex';
           } catch (err) {
             errorLog('Error loading command engine: ' + err);
           }
