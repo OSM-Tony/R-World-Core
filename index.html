@@ -15,6 +15,10 @@
     .system-log { color: #00bfff; }
     .error-log { color: #ff4444; }
     .hidden-log { display: none; }
+    #buttonBar { background: #222; padding: 5px; display: flex; gap: 10px; justify-content: center; }
+    #buttonBar button { border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; }
+    .btn-on { background-color: #28a745; color: #fff; }
+    .btn-off { background-color: #555; color: #aaa; }
     #commandLine { background: #333; padding: 5px; display: flex; }
     #commandLine input { flex: 1; padding: 8px; border: none; color: #fff; background: #444; }
     #commandLine button { padding: 8px; border: none; background: #555; color: #fff; cursor: pointer; }
@@ -22,6 +26,11 @@
 </head>
 <body>
   <div id="consoleOutput"></div>
+  <div id="buttonBar">
+    <button id="jsonLogBtn" class="btn-on" onclick="toggleLog('json')">JSON</button>
+    <button id="systemLogBtn" class="btn-on" onclick="toggleLog('system')">SYSTEM</button>
+    <button id="errorLogBtn" class="btn-on" onclick="toggleLog('error')">ERROR</button>
+  </div>
   <div id="commandLine">
     <input id="cmdInput" type="text" placeholder="Enter command or JSON here...">
     <button onclick="executeCommand()">Run</button>
@@ -55,6 +64,20 @@
       logEntry.textContent = `[${type.toUpperCase()}] ${message}`;
       output.appendChild(logEntry);
       output.scrollTop = output.scrollHeight;
+    }
+
+    function toggleLog(type) {
+      if (!logSettings[type]) systemLog(`${type.toUpperCase()} logging was off, re-enabling.`);
+      else systemLog(`${type.toUpperCase()} logging now hiding entries.`);
+
+      logSettings[type] = !logSettings[type];
+      const button = document.getElementById(`${type}LogBtn`);
+      button.className = logSettings[type] ? 'btn-on' : 'btn-off';
+
+      document.querySelectorAll(`.${type}-log`).forEach(entry => {
+        if (logSettings[type]) entry.classList.remove('hidden-log');
+        else entry.classList.add('hidden-log');
+      });
     }
 
     function executeCommand() {
