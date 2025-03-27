@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>R-World Core — Dynamic Shell</title>
+  <title>R-World Core — Stable Console Shell</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -15,10 +15,6 @@
     .system-log { color: #00bfff; }
     .error-log { color: #ff4444; }
     .hidden-log { display: none; }
-    #buttonBar { background: #222; padding: 5px; display: flex; gap: 10px; justify-content: center; }
-    #buttonBar button { border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; }
-    .btn-on { background-color: #28a745; color: #fff; }
-    .btn-off { background-color: #555; color: #aaa; }
     #commandLine { background: #333; padding: 5px; display: flex; }
     #commandLine input { flex: 1; padding: 8px; border: none; color: #fff; background: #444; }
     #commandLine button { padding: 8px; border: none; background: #555; color: #fff; cursor: pointer; }
@@ -26,15 +22,6 @@
 </head>
 <body>
   <div id="consoleOutput"></div>
-  <div id="buttonBar" style="display: none;">
-  <button id="jsonLogBtn" class="btn-on" onclick="toggleLog('json')">JSON</button>
-  <button id="systemLogBtn" class="btn-on" onclick="toggleLog('system')">SYSTEM</button>
-  <button id="errorLogBtn" class="btn-on" onclick="toggleLog('error')">ERROR</button>
-  <button onclick="handleCommand('/VIEW DATABASE')">Database View</button>
-  <button onclick="handleCommand('/VIEW WEB')">Web View</button>
-  <button onclick="handleCommand('/VIEW WALK')">Walkaround View</button>
-  <button onclick="handleCommand('/VIEW CONSOLE')">Console View</button>
-</div>
   <div id="commandLine">
     <input id="cmdInput" type="text" placeholder="Enter command or JSON here...">
     <button onclick="executeCommand()">Run</button>
@@ -70,20 +57,6 @@
       output.scrollTop = output.scrollHeight;
     }
 
-    function toggleLog(type) {
-      if (!logSettings[type]) systemLog(`${type.toUpperCase()} logging was off, re-enabling.`);
-      else systemLog(`${type.toUpperCase()} logging now hiding entries.`);
-
-      logSettings[type] = !logSettings[type];
-      const button = document.getElementById(`${type}LogBtn`);
-      button.className = logSettings[type] ? 'btn-on' : 'btn-off';
-
-      document.querySelectorAll(`.${type}-log`).forEach(entry => {
-        if (logSettings[type]) entry.classList.remove('hidden-log');
-        else entry.classList.add('hidden-log');
-      });
-    }
-
     function executeCommand() {
       const input = document.getElementById('cmdInput').value.trim();
       if (!input) return;
@@ -110,14 +83,12 @@
     }
 
     function loadCoreCommandEngine(initialCommand) {
-      document.getElementById('buttonBar').style.display = 'none';
       firebase.database().ref('/views/coreCommandEngineBase64').once('value').then(snapshot => {
         const encoded = snapshot.val();
         if (encoded) {
           try {
             eval(atob(encoded));
             if (initialCommand) handleCommand(initialCommand);
-            if (initialCommand === '/VIEW CONSOLE') document.getElementById('buttonBar').style.display = 'flex';
           } catch (err) {
             errorLog('Error loading command engine: ' + err);
           }
