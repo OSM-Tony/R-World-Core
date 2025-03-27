@@ -27,10 +27,14 @@
 <body>
   <div id="consoleOutput"></div>
   <div id="buttonBar" style="display: none;">
-    <button id="jsonLogBtn" class="btn-on" onclick="toggleLog('json')">JSON</button>
-    <button id="systemLogBtn" class="btn-on" onclick="toggleLog('system')">SYSTEM</button>
-    <button id="errorLogBtn" class="btn-on" onclick="toggleLog('error')">ERROR</button>
-  </div>
+  <button id="jsonLogBtn" class="btn-on" onclick="toggleLog('json')">JSON</button>
+  <button id="systemLogBtn" class="btn-on" onclick="toggleLog('system')">SYSTEM</button>
+  <button id="errorLogBtn" class="btn-on" onclick="toggleLog('error')">ERROR</button>
+  <button onclick="handleCommand('/VIEW DATABASE')">Database View</button>
+  <button onclick="handleCommand('/VIEW WEB')">Web View</button>
+  <button onclick="handleCommand('/VIEW WALK')">Walkaround View</button>
+  <button onclick="handleCommand('/VIEW CONSOLE')">Console View</button>
+</div>
   <div id="commandLine">
     <input id="cmdInput" type="text" placeholder="Enter command or JSON here...">
     <button onclick="executeCommand()">Run</button>
