@@ -1,55 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>R-World</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-<script>
-  const SUPABASE_URL = "https://bdiheyiblvkvkstwnjoo.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
-  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  <meta charset="UTF-8">
+  <title>R-World</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    const SUPABASE_URL = "https://bdiheyiblvkvkstwnjoo.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkaWhleWlibHZrdmtzdHduam9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5Njk0ODQsImV4cCI6MjA1OTU0NTQ4NH0.cyT-RshelVD5uCWYpNhB2xKE57K2Oh30HldjbcYAbDg";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  async function logCommandToSupabase(command) {
-    console.log("Supabase client initialized:", supabase);
-const { data, error } = await supabase
-      .from('commands')
-      .insert([{ text: command, timestamp: new Date().toISOString() }]);
-    if (error) {
-      console.error("Supabase Insert Error:", error);
-    } else {
-      console.log("Command logged to Supabase:", data);
-    }
-  }
+    async function logCommandToSupabase(command) {
+      const { data, error } = await sb
+        .from('commands')
+        .insert([{ text: command, timestamp: new Date().toISOString() }]);
 
-  window.onload = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const entries = [...urlParams.entries()];
-    const commandBox = document.getElementById("output");
-
-console.log("R-World Command Detected:", input);
-console.log("Supabase client initialized:", supabase);
-
-      
-    if (entries.length > 0) {
-      const [key, value] = entries[0];
-      const input = decodeURIComponent(`${key} ${value}`);
-      let response = '';
-
-      if (input.toLowerCase().includes("speak inna")) {
-        response = "INNA says: Hello, beautiful soul. I'm here with you.";
+      if (error) {
+        console.error("Supabase Insert Error:", error);
       } else {
-        response = "INNA says: I don't quite understand, but I'm learning.";
+        console.log("Command logged to Supabase:", data);
       }
-
-      commandBox.textContent = response;
-      logCommandToSupabase(input);
     }
-  };
-</script>
 
+    window.onload = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const entries = [...urlParams.entries()];
+      const commandBox = document.getElementById("output");
+
+      if (entries.length > 0) {
+        const [key, value] = entries[0];
+        const input = decodeURIComponent(`${key} ${value}`);
+        let response = '';
+
+        if (input.toLowerCase().includes("speak inna")) {
+          response = "INNA says: Hello, beautiful soul. I'm here with you.";
+        } else {
+          response = "INNA says: I don't quite understand, but I'm learning.";
+        }
+
+        commandBox.textContent = response;
+        logCommandToSupabase(input);
+      }
+    };
+  </script>
 </head>
 <body>
-    <h1>Welcome to R-World</h1>
-    <p id="output" style="font-size: 1.2em; color: green;"></p>
+  <h1>Welcome to R-World</h1>
+  <p id="output" style="font-size: 1.2em; color: green;"></p>
 </body>
 </html>
