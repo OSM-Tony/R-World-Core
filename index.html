@@ -10,7 +10,8 @@
   const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   async function logCommandToSupabase(command) {
-    const { data, error } = await supabase
+    console.log("Supabase client initialized:", supabase);
+const { data, error } = await supabase
       .from('commands')
       .insert([{ text: command, timestamp: new Date().toISOString() }]);
     if (error) {
@@ -25,6 +26,10 @@
     const entries = [...urlParams.entries()];
     const commandBox = document.getElementById("output");
 
+console.log("R-World Command Detected:", input);
+console.log("Supabase client initialized:", supabase);
+
+      
     if (entries.length > 0) {
       const [key, value] = entries[0];
       const input = decodeURIComponent(`${key} ${value}`);
