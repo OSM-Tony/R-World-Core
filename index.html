@@ -3,39 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>R-World</title>
-    <script>
-        function parseCommand() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const raw = [...urlParams][0];
-            const commandBox = document.getElementById("output");
-            if (raw && raw[0]) {
-                const input = decodeURIComponent(raw[0] + ' ' + raw[1]);
-                let response = '';
-                if (input.toLowerCase().includes("speak inna")) {
-                    response = "INNA says: Hello, beautiful soul. I'm here with you.";
-                } else {
-                    response = "INNA says: I don't quite understand, but I'm learning.";
-                }
-                commandBox.textContent = response;
-            }
-        }
-
-        
-        
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script>
   const SUPABASE_URL = "https://bdiheyiblvkvkstwnjoo.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkaWhleWlibHZrdmtzdHduam9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5Njk0ODQsImV4cCI6MjA1OTU0NTQ4NH0.cyT-RshelVD5uCWYpNhB2xKE57K2Oh30HldjbcYAbDg";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
   const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   async function logCommandToSupabase(command) {
     const { data, error } = await supabase
       .from('commands')
-      .insert([{
-        text: command,
-        timestamp: new Date().toISOString()
-      }]);
+      .insert([{ text: command, timestamp: new Date().toISOString() }]);
     if (error) {
       console.error("Supabase Insert Error:", error);
     } else {
@@ -45,21 +22,26 @@
 
   window.onload = () => {
     const urlParams = new URLSearchParams(window.location.search);
-    const raw = [...urlParams][0];
+    const entries = [...urlParams.entries()];
     const commandBox = document.getElementById("output");
-    if (raw && raw[0]) {
-      const input = decodeURIComponent(raw[0] + ' ' + raw[1]);
+
+    if (entries.length > 0) {
+      const [key, value] = entries[0];
+      const input = decodeURIComponent(`${key} ${value}`);
       let response = '';
+
       if (input.toLowerCase().includes("speak inna")) {
-          response = "INNA says: Hello, beautiful soul. I'm here with you.";
+        response = "INNA says: Hello, beautiful soul. I'm here with you.";
       } else {
-          response = "INNA says: I don't quite understand, but I'm learning.";
+        response = "INNA says: I don't quite understand, but I'm learning.";
       }
+
       commandBox.textContent = response;
       logCommandToSupabase(input);
     }
   };
 </script>
+
 </head>
 <body onload="parseCommand()">
     <h1>Welcome to R-World</h1>
