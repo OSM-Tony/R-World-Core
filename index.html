@@ -1,109 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>R-World Core — Stable Console Shell</title>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-  <style>
-    body { margin: 0; font-family: sans-serif; background-color: #111; display: flex; flex-direction: column; height: 100vh; }
-    #consoleOutput { flex: 1; font-size: 12px; background: #111; padding: 10px; overflow-y: auto; color: #fff; }
-    .log-entry { margin-bottom: 4px; }
-    .json-log { color: #0f0; }
-    .system-log { color: #00bfff; }
-    .error-log { color: #ff4444; }
-    .hidden-log { display: none; }
-    #commandLine { background: #333; padding: 5px; display: flex; }
-    #commandLine input { flex: 1; padding: 8px; border: none; color: #fff; background: #444; }
-    #commandLine button { padding: 8px; border: none; background: #555; color: #fff; cursor: pointer; }
-  </style>
+    <meta charset="UTF-8">
+    <title>R-World</title>
+    <script>
+        function parseCommand() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const raw = [...urlParams][0];
+            const commandBox = document.getElementById("output");
+            if (raw && raw[0]) {
+                const input = decodeURIComponent(raw[0] + ' ' + raw[1]);
+                let response = '';
+                if (input.toLowerCase().includes("speak inna")) {
+                    response = "INNA says: Hello, beautiful soul. I'm here with you.";
+                } else {
+                    response = "INNA says: I don't quite understand, but I'm learning.";
+                }
+                commandBox.textContent = response;
+            }
+        }
+    </script>
 </head>
-<body>
-  <div id="consoleOutput"></div>
-  <div id="commandLine">
-    <input id="cmdInput" type="text" placeholder="Enter command or JSON here...">
-    <button onclick="executeCommand()">Run</button>
-  </div>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCImKSrWlWkHBPZe1-g--jcl_xthZyORhI",
-      authDomain: "r-world-core.firebaseapp.com",
-      databaseURL: "https://r-world-core-default-rtdb.firebaseio.com",
-      projectId: "r-world-core",
-      storageBucket: "r-world-core.appspot.com",
-      messagingSenderId: "335093562897",
-      appId: "1:335093562897:web:f2be99bb04eb06d2123bb0",
-      measurementId: "G-ZMXF2QEBXQ"
-    };
-    firebase.initializeApp(firebaseConfig);
-
-    firebase.auth().signInWithEmailAndPassword('rworlddev@gmail.com', 'vancouverhl119!')
-      .then(() => systemLog('Signed in successfully.'))
-      .catch((error) => systemLog('Authentication error: ' + error.message));
-
-    const logSettings = { json: true, system: true, error: true };
-
-    function systemLog(msg) { addLog(msg, 'system'); }
-    function jsonLog(msg) { addLog(msg, 'json'); }
-    function errorLog(msg) { addLog(msg, 'error'); }
-    function addLog(message, type) {
-      const output = document.getElementById('consoleOutput');
-      const logEntry = document.createElement('div');
-      logEntry.className = `log-entry ${type}-log ${logSettings[type] ? '' : 'hidden-log'}`;
-      logEntry.textContent = `[${type.toUpperCase()}] ${message}`;
-      output.appendChild(logEntry);
-      output.scrollTop = output.scrollHeight;
-    }
-
-    function executeCommand() {
-      const input = document.getElementById('cmdInput').value.trim();
-      if (!input) return;
-      if (input.startsWith('{')) {
-        try {
-          const cmd = JSON.parse(input);
-          if (cmd.path && (cmd.data !== undefined)) {
-            jsonLog(`Attempting to write to ${cmd.path}`);
-            firebase.database().ref(cmd.path).set(cmd.data).then(() => {
-              jsonLog('Database updated successfully at ' + cmd.path);
-            }).catch(err => {
-              errorLog('Database write error: ' + err);
-            });
-          } else {
-            errorLog('Invalid JSON. Requires "path" and "data".');
-          }
-        } catch (e) {
-          errorLog('JSON parse error: ' + e);
-        }
-      } else {
-        loadCoreCommandEngine(input);
-      }
-      document.getElementById('cmdInput').value = '';
-    }
-
-    function loadCoreCommandEngine(initialCommand) {
-      firebase.database().ref('/views/coreCommandEngineBase64').once('value').then(snapshot => {
-        const encoded = snapshot.val();
-        if (encoded) {
-          try {
-            eval(atob(encoded));
-            if (initialCommand) handleCommand(initialCommand);
-          } catch (err) {
-            errorLog('Error loading command engine: ' + err);
-          }
-        } else {
-          errorLog('Command engine script not found in /views/coreCommandEngineBase64.');
-        }
-      });
-    }
-
-    document.getElementById('cmdInput').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') executeCommand();
-    });
-
-    // Boot loader: load command system, then execute default view
-    loadCoreCommandEngine();
-  </script>
+<body onload="parseCommand()">
+    <h1>Welcome to R-World</h1>
+    <p id="output" style="font-size: 1.2em; color: green;"></p>
 </body>
 </html>
