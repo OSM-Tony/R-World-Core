@@ -2,49 +2,68 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>R-World</title>
+  <title>R-World Console</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; background-color: #f0f0f0; }
+    h1 { color: #2c3e50; }
+    #log { background: #fff; border: 1px solid #ccc; padding: 1em; max-height: 300px; overflow-y: auto; margin-bottom: 1em; }
+    #inputArea { display: flex; gap: 0.5em; }
+    input[type="text"] { flex-grow: 1; padding: 0.5em; font-size: 1em; }
+    button { padding: 0.5em 1em; font-size: 1em; }
+  </style>
   <script>
     const SUPABASE_URL = "https://bdiheyiblvkvkstwnjoo.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkaWhleWlibHZrdmtzdHduam9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5Njk0ODQsImV4cCI6MjA1OTU0NTQ4NH0.cyT-RshelVD5uCWYpNhB2xKE57K2Oh30HldjbcYAbDg";
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    async function logCommandToSupabase(command) {
-      const { data, error } = await sb
-        .from('commands')
-        .insert([{ text: command, timestamp: new Date().toISOString() }]);
+    async function logCommand(command, response) {
+      const { error } = await sb.from('commands').insert([{ 
+        text: command,
+        timestamp: new Date().toISOString(),
+        response: response
+      }]);
+      if (error) console.error("Supabase Insert Error:", error);
+    }
 
-      if (error) {
-        console.error("Supabase Insert Error:", error);
+    function speakToINNA() {
+      const inputField = document.getElementById("commandInput");
+      const log = document.getElementById("log");
+      const command = inputField.value.trim();
+
+      if (!command) return;
+
+      let response = "";
+      if (command.toLowerCase().includes("speak inna")) {
+        response = "INNA says: Hello, beautiful soul. I'm here with you.";
       } else {
-        console.log("Command logged to Supabase:", data);
+        response = "INNA says: I don't quite understand, but I'm learning.";
       }
+
+      const entry = document.createElement("div");
+      entry.innerHTML = `<strong>You:</strong> ${command}<br><strong>${response}</strong><hr>`;
+      log.prepend(entry);
+      inputField.value = "";
+
+      logCommand(command, response);
     }
 
     window.onload = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const entries = [...urlParams.entries()];
-      const commandBox = document.getElementById("output");
-
-      if (entries.length > 0) {
-        const [key, value] = entries[0];
-        const input = decodeURIComponent(`${key} ${value}`);
-        let response = '';
-
-        if (input.toLowerCase().includes("speak inna")) {
-          response = "INNA says: Hello, beautiful soul. I'm here with you.";
-        } else {
-          response = "INNA says: I don't quite understand, but I'm learning.";
+      const inputField = document.getElementById("commandInput");
+      inputField.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          speakToINNA();
         }
-
-        commandBox.textContent = response;
-        logCommandToSupabase(input);
-      }
+      });
     };
   </script>
 </head>
 <body>
-  <h1>Welcome to R-World</h1>
-  <p id="output" style="font-size: 1.2em; color: green;"></p>
+  <h1>R-World Console</h1>
+  <div id="log"><em>INNA is listening...</em></div>
+  <div id="inputArea">
+    <input type="text" id="commandInput" placeholder="Type a command like 'SPEAK INNA Hello'" />
+    <button onclick="speakToINNA()">Send</button>
+  </div>
 </body>
 </html>
