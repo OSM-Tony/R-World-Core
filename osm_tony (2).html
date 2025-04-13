@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OSM Tony - R-World Music for Change</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; background-color: #f9f9f9; color: #333; }
+        h1 { color: #005f99; }
+        .section { margin-bottom: 2em; }
+        .album-list a { display: block; margin-bottom: 0.5em; color: #0077cc; }
+        #goalDisplay { font-size: 2em; font-weight: bold; color: #d00; }
+        #chart { width: 100%; height: 300px; background: #fff; border: 1px solid #ccc; text-align: center; line-height: 300px; font-style: italic; color: #aaa; }
+        .donate-button { display: inline-block; margin: 1em 0; padding: 10px 20px; background-color: #0070ba; color: white; text-decoration: none; border-radius: 8px; font-size: 1.2em; }
+    </style>
+    <script>
+        const goal = 10000;
+        let raised = 0;
+        let logDate = "";
+
+        function parseDonation() {
+            const query = window.location.search.slice(1);
+            const parts = query.split(":");
+            const today = new Date();
+
+            if (parts.length > 0) {
+                const amount = parseFloat(parts[0]);
+                if (!isNaN(amount)) {
+                    raised += amount;
+                }
+            }
+
+            if (parts.length === 1 || parts[1] === "") {
+                logDate = today.toDateString();
+            } else if (parts[1].startsWith("-")) {
+                let daysBack = parseInt(parts[1].slice(1));
+                let newDate = new Date(today);
+                newDate.setDate(today.getDate() - daysBack);
+                logDate = newDate.toDateString();
+            } else {
+                logDate = parts[1].replace(/\./g, " ");
+            }
+
+            document.getElementById("goalDisplay").textContent = "$" + raised.toFixed(2) + " raised of $" + goal.toFixed(2);
+            document.getElementById("logDate").textContent = "(Logged on: " + logDate + ")";
+        }
+
+        window.onload = parseDonation;
+    </script>
+</head>
+<body>
+    <h1>Welcome to OSM Tony's Official Site</h1>
+    <div class="section">
+        <p>I’m raising money to support my <strong>top 5 causes</strong> — things I care about deeply and advocate for through music. Help me reach my goal of <strong>$10,000.00</strong> to make a meaningful impact.</p>
+        <div id="goalDisplay">$0.00 raised of $10,000.00</div>
+        <div id="logDate" style="color: #666; margin-bottom: 1em;"></div>
+        <a class="donate-button" href="https://paypal.me/OSMTony" target="_blank">Donate via PayPal.Me</a>
+        <ul class="causes">
+            <li>🏠 <strong>Homelessness / Addictions / Mental Health</strong></li>
+            <li>🕊️ <strong>Murdered and Missing Women / Highway of Tears</strong></li>
+            <li>🌈 <strong>LGBTQ+ / The Rainbow People</strong></li>
+            <li>🪶 <strong>Truth and Reconciliation / Unmarked Graves</strong></li>
+            <li>👵 <strong>Seniors and Elders Care & Advocacy</strong></li>
+        </ul>
+        <div id="chart">[Progress chart coming soon]</div>
+    </div>
+    <div class="section">
+        <h2>🎶 Sneak Peek: Raw & Pre-Release Albums</h2>
+        <p>These are early drafts — hear the heart before the polish.</p>
+        <div class="album-list">
+            <a href="Album_01_I_Believe_in_Magic.zip" download>📀 Album 01 – I Believe in Magic</a>
+            <a href="Album_02_Bloody_Footprints.zip" download>📀 Album 02 – Bloody Footprints in the Sand</a>
+            <a href="Album_03_All_the_Broken_Pieces.zip" download>📀 Album 03 – All the Broken Pieces</a>
+        </div>
+    </div>
+    <div class="section">
+        <h2>🎥 Upload a Video of Me Performing</h2>
+        <p>If you’ve caught me on camera, I’d love to see it — and you might even get paid if your video is used.</p>
+        <form action="https://formspree.io/f/mgejdlnp" method="POST" enctype="multipart/form-data">
+            <label for="email">Your email:</label><br>
+            <input type="email" name="email" required><br><br>
+            <label for="video">Upload your video:</label><br>
+            <input type="file" name="video" accept="video/*" required><br><br>
+            <button type="submit">Submit Video</button>
+        </form>
+    </div>
+    <div class="section">
+        <h2>💸 Support the Mission</h2>
+        <p>Click below to donate any amount you choose:</p>
+        <a class="donate-button" href="https://paypal.me/OSMTony" target="_blank">Donate via PayPal.Me</a>
+    </div>
+</body>
+</html>
