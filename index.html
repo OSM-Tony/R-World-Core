@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>R-World :: Command Core</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      background: #111;
+      color: #0f0;
+      font-family: monospace;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    #consoleOutput {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1em;
+      white-space: pre-wrap;
+    }
+    #commandBar {
+      display: flex;
+      background: #000;
+      padding: 0.5em;
+    }
+    #commandInput {
+      flex: 1;
+      background: #000;
+      color: #0f0;
+      border: none;
+      font-family: monospace;
+      font-size: 1em;
+    }
+    #commandInput:focus {
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="consoleOutput">R-World Console Ready.</div>
+  <div id="commandBar">
+    <input type="text" id="commandInput" placeholder="/ENTER COMMAND..." autofocus autocomplete="off" />
+  </div>
+
+  <script>
+    const supabaseUrl = 'https://bdiheyiblvkvkstwnjoo.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkaWhleWlibHZrdmtzdHduam9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5Njk0ODQsImV4cCI6MjA1OTU0NTQ4NH0.cyT-RshelVD5uCWYpNhB2xKE57K2Oh30HldjbcYAbDg';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    const input = document.getElementById('commandInput');
+    const output = document.getElementById('consoleOutput');
+
+    let history = [];
+    let historyIndex = 0;
+
+    async function runCommand(raw) {
+      const line = raw.trim();
+      if (!line) return;
+      history.push(line);
+      historyIndex = history.length;
+      logToConsole(`> ${line}`);
+
+      if (line.startsWith('/NEW')) {
+        try {
+          const match = line.match(/\/NEW (\w+)[\s\n]+`([\s\S]*)`/);
+          if (!match) {
+            logToConsole('Usage: /NEW commandName `code here`');
+            return;
+          }
+          const [_, name, code] = match;
+          const { data, error } = await supabase.from('commands').upsert({ name, code });
+          if (error) logToConsole('ERROR: ' + error.message);
+          else logToConsole(`Command "/${name}" saved.`);
+        } catch (e) {
+          logToConsole('FAILED: ' + e.message);
+        }
+      } else {
+        const name = line.replace('/', '').split(' ')[0];
+        const { data, error } = await supabase.from('commands').select('code').eq('name', name).single();
+        if (error || !data) {
+          logToConsole(`Command "${name}" not found.`);
+          return;
+        }
+        try {
+          eval(data.code);
+          logToConsole(`Executed /${name}`);
+        } catch (e) {
+          logToConsole('Execution Error: ' + e.message);
+        }
+      }
+    }
+
+    function logToConsole(text) {
+      output.innerText += `\n${text}`;
+      output.scrollTop = output.scrollHeight;
+    }
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        runCommand(input.value);
+        input.value = '';
+      } else if (e.key === 'ArrowUp') {
+        if (historyIndex > 0) {
+          historyIndex--;
+          input.value = history[historyIndex];
+        }
+      } else if (e.key === 'ArrowDown') {
+        if (historyIndex < history.length - 1) {
+          historyIndex++;
+          input.value = history[historyIndex];
+        } else {
+          input.value = '';
+        }
+      }
+    });
+
+    // Autorun on load if defined
+    async function tryAutorun() {
+      const { data, error } = await supabase.from('settings').select('value').eq('key', 'autorun').single();
+      if (data && data.value) {
+        logToConsole('[AUTORUN] Executing: ' + data.value);
+        runCommand(data.value);
+      } else {
+        logToConsole('[AUTORUN] No autorun command found. Ready for /NEW.');
+      }
+    }
+
+    tryAutorun();
+  </script>
+</body>
+</html>
