@@ -24,7 +24,7 @@
     #commandBar {
       display: flex;
       background: #000;
-      padding: 0.5em;
+      padding: 0.15em;
     }
     #commandInput {
       flex: 1;
@@ -42,7 +42,7 @@
 <body>
   <div id="consoleOutput">R-World Console Ready.</div>
   <div id="commandBar">
-    <input type="text" id="commandInput" placeholder="/ENTER COMMAND..." autofocus autocomplete="off" />
+    <input type="text" id="commandInput" placeholder="" autofocus autocomplete="off" />
   </div>
 
   <script>
@@ -71,7 +71,7 @@
             return;
           }
           const [_, name, code] = match;
-          const { data, error } = await supabaseDB.from('commands').upsert({ name, code });
+          const { data, error } = await supabaseDB.from('command_defs').upsert({ name, code });
           if (error) logToConsole('ERROR: ' + error.message);
           else logToConsole(`Command "/${name}" saved.`);
         } catch (e) {
@@ -79,7 +79,7 @@
         }
       } else {
         const name = line.replace('/', '').split(' ')[0];
-        const { data, error } = await supabaseDB.from('commands').select('code').eq('name', name).single();
+        const { data, error } = await supabaseDB.from('command_defs').select('code').eq('name', name).single();
         if (error || !data) {
           logToConsole(`Command "${name}" not found.`);
           return;
