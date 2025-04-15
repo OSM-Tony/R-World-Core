@@ -24,7 +24,7 @@
     #commandBar {
       display: flex;
       background: #000;
-      padding: 1em;
+      padding: 0.5em;
     }
     #commandInput {
       flex: 1;
@@ -32,7 +32,7 @@
       color: #0f0;
       border: none;
       font-family: monospace;
-      font-size: 0.5em;
+      font-size: 1em;
     }
     #commandInput:focus {
       outline: none;
@@ -42,13 +42,13 @@
 <body>
   <div id="consoleOutput">R-World Console Ready.</div>
   <div id="commandBar">
-    <input type="text" id="commandInput" placeholder="" autofocus autocomplete="off" />
+    <input type="text" id="commandInput" placeholder="/ENTER COMMAND..." autofocus autocomplete="off" />
   </div>
 
   <script>
     const supabaseUrl = 'https://bdiheyiblvkvkstwnjoo.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkaWhleWlibHZrdmtzdHduam9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5Njk0ODQsImV4cCI6MjA1OTU0NTQ4NH0.cyT-RshelVD5uCWYpNhB2xKE57K2Oh30HldjbcYAbDg';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    const supabaseDB = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     const input = document.getElementById('commandInput');
     const output = document.getElementById('consoleOutput');
@@ -71,7 +71,7 @@
             return;
           }
           const [_, name, code] = match;
-          const { data, error } = await supabase.from('commands').upsert({ name, code });
+          const { data, error } = await supabaseDB.from('commands').upsert({ name, code });
           if (error) logToConsole('ERROR: ' + error.message);
           else logToConsole(`Command "/${name}" saved.`);
         } catch (e) {
@@ -79,7 +79,7 @@
         }
       } else {
         const name = line.replace('/', '').split(' ')[0];
-        const { data, error } = await supabase.from('commands').select('code').eq('name', name).single();
+        const { data, error } = await supabaseDB.from('commands').select('code').eq('name', name).single();
         if (error || !data) {
           logToConsole(`Command "${name}" not found.`);
           return;
@@ -119,7 +119,7 @@
 
     // Autorun on load if defined
     async function tryAutorun() {
-      const { data, error } = await supabase.from('settings').select('value').eq('key', 'autorun').single();
+      const { data, error } = await supabaseDB.from('settings').select('value').eq('key', 'autorun').single();
       if (data && data.value) {
         logToConsole('[AUTORUN] Executing: ' + data.value);
         runCommand(data.value);
