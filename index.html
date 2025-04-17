@@ -128,6 +128,45 @@
         logToConsole('[AUTORUN] No autorun command found. Ready for /NEW.');
       }
     }
+// /NEW CODE <id> \n <source code>
+window.commands['NEWCODE'] = async function(line) {
+  const [_, id, ...rest] = line.split(' ');
+  const raw = rest.join(' ').split('\n').slice(1).join('\n');
+  const base64 = btoa(raw);
+
+  const { error } = await supabaseDB.from('code').upsert({
+    id,
+    source: raw,
+    compiled: base64,
+    type: 'js'
+  });
+
+  if (error) logToConsole('[NEWCODE ERROR] ' + error.message);
+  else logToConsole(`[NEWCODE] Stored and encoded '${id}'`);
+};
+
+// /RUN CODE <id>
+window.commands['RUNCODE'] = async function(line) {
+  const id = line.split(' ')[1];
+  const { data, error } = await supabaseDB.from('code').select('*').eq('id', id).single();
+
+  if (error || !data) return logToConsole('[RUNCODE ERROR] ' + (error?.message || 'not found'));
+
+  try {
+    eval(atob(data.compiled));
+    logToConsole(`[RUNCODE] Executed '${id}'`);
+  } catch (e) {
+    logToConsole('[RUNCODE ERROR] ' + e.message);
+  }
+};
+
+// Optional: /SHOWCODE <id> (to view raw code)
+window.commands['SHOWCODE'] = async function(line) {
+  const id = line.split(' ')[1];
+  const { data, error } = await supabaseDB.from('code').select('*').eq('id', id).single();
+  if (error || !data) return logToConsole('[SHOWCODE ERROR] ' + (error?.message || 'not found'));
+  logToConsole(`[SOURCE] ${data.id}:\n` + data.source);
+};
 
     tryAutorun();
   </script>
