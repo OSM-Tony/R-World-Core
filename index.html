@@ -57,40 +57,27 @@
     let history = [];
     let historyIndex = 0;
 
-    async function runCommand(raw) {
-      const line = raw.trim();
-      if (!line) return;
+    async function runCommand(line) {
+      const name = line.split(' ')[0].replace('/', '');
       history.push(line);
       historyIndex = history.length;
       logToConsole(`> ${line}`);
 
-      if (line.startsWith('/NEW')) {
-        try {
-          const match = line.match(/\/NEW (\w+)[\s\n]+`([\s\S]*)`/);
-          if (!match) {
-            logToConsole('Usage: /NEW commandName `code here`');
-            return;
-          }
-          const [_, name, code] = match;
-          const { data, error } = await supabaseDB.from('command_defs').upsert({ name, code });
-          if (error) logToConsole('ERROR: ' + error.message);
-          else logToConsole(`Command "/${name}" saved.`);
-        } catch (e) {
-          logToConsole('FAILED: ' + e.message);
-        }
-      } else {
-        const name = line.replace('/', '').split(' ')[0];
-        const { data, error } = await supabaseDB.from('command_defs').select('code').eq('name', name).single();
-        if (error || !data) {
-          logToConsole(`Command "${name}" not found.`);
-          return;
-        }
-        try {
-          eval(data.code);
-          logToConsole(`Executed /${name}`);
-        } catch (e) {
-          logToConsole('Execution Error: ' + e.message);
-        }
+      if (window.commands[name]) {
+        await window.commands[name](line);
+        return;
+      }
+
+      const { data, error } = await supabaseDB.from('command_defs').select('code').eq('name', name).single();
+      if (error || !data) {
+        logToConsole(`[ERROR] Command "${name}" not found.`);
+        return;
+      }
+
+      try {
+        eval(data.code);
+      } catch (e) {
+        logToConsole('[EXECUTION ERROR] ' + e.message);
       }
     }
 
@@ -118,7 +105,6 @@
       }
     });
 
-    // Autorun on load if defined
     async function tryAutorun() {
       const { data, error } = await supabaseDB.from('settings').select('value').eq('key', 'autorun').single();
       if (data && data.value) {
@@ -128,45 +114,44 @@
         logToConsole('[AUTORUN] No autorun command found. Ready for /NEW.');
       }
     }
-// /NEW CODE <id> \n <source code>
-window.commands['NEWCODE'] = async function(line) {
-  const [_, id, ...rest] = line.split(' ');
-  const raw = rest.join(' ').split('\n').slice(1).join('\n');
-  const base64 = btoa(raw);
 
-  const { error } = await supabaseDB.from('code').upsert({
-    id,
-    source: raw,
-    compiled: base64,
-    type: 'js'
-  });
+    window.commands = window.commands || {};
 
-  if (error) logToConsole('[NEWCODE ERROR] ' + error.message);
-  else logToConsole(`[NEWCODE] Stored and encoded '${id}'`);
-};
+    window.commands['NEWCODE'] = async function(line) {
+      const [_, id, ...rest] = line.split(' ');
+      const raw = rest.join(' ').split('\n').slice(1).join('\n');
+      const base64 = btoa(raw);
 
-// /RUN CODE <id>
-window.commands['RUNCODE'] = async function(line) {
-  const id = line.split(' ')[1];
-  const { data, error } = await supabaseDB.from('code').select('*').eq('id', id).single();
+      const { error } = await supabaseDB.from('code').upsert({
+        id,
+        source: raw,
+        compiled: base64,
+        type: 'js'
+      });
 
-  if (error || !data) return logToConsole('[RUNCODE ERROR] ' + (error?.message || 'not found'));
+      if (error) logToConsole('[NEWCODE ERROR] ' + error.message);
+      else logToConsole(`[NEWCODE] Stored and encoded '${id}'`);
+    };
 
-  try {
-    eval(atob(data.compiled));
-    logToConsole(`[RUNCODE] Executed '${id}'`);
-  } catch (e) {
-    logToConsole('[RUNCODE ERROR] ' + e.message);
-  }
-};
+    window.commands['RUNCODE'] = async function(line) {
+      const id = line.split(' ')[1];
+      const { data, error } = await supabaseDB.from('code').select('*').eq('id', id).single();
+      if (error || !data) return logToConsole('[RUNCODE ERROR] ' + (error?.message || 'not found'));
 
-// Optional: /SHOWCODE <id> (to view raw code)
-window.commands['SHOWCODE'] = async function(line) {
-  const id = line.split(' ')[1];
-  const { data, error } = await supabaseDB.from('code').select('*').eq('id', id).single();
-  if (error || !data) return logToConsole('[SHOWCODE ERROR] ' + (error?.message || 'not found'));
-  logToConsole(`[SOURCE] ${data.id}:\n` + data.source);
-};
+      try {
+        eval(atob(data.compiled));
+        logToConsole(`[RUNCODE] Executed '${id}'`);
+      } catch (e) {
+        logToConsole('[RUNCODE ERROR] ' + e.message);
+      }
+    };
+
+    window.commands['SHOWCODE'] = async function(line) {
+      const id = line.split(' ')[1];
+      const { data, error } = await supabaseDB.from('code').select('*').eq('id', id).single();
+      if (error || !data) return logToConsole('[SHOWCODE ERROR] ' + (error?.message || 'not found'));
+      logToConsole(`[SOURCE] ${data.id}:\n` + data.source);
+    };
 
     tryAutorun();
   </script>
