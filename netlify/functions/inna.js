@@ -1,36 +1,187 @@
-const fetch = require('node-fetch');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>R-World :: Command Core</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://www.paypal.com/sdk/js?client-id=BAACtcZB3W47LtzxI5CkB1QNObfDt-yJYDYXQwsyiD1IeuLLTpqktYm_Uz3SFk2TzHi47JUf16fPBS65Ts&components=hosted-buttons&disable-funding=venmo&currency=CAD"></script>
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      background: #111;
+      color: #0f0;
+      font-family: monospace;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    #consoleOutput {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1em;
+      white-space: pre-wrap;
+    }
+    #commandBar {
+      display: flex;
+      background: #000;
+      padding: 0.15em;
+    }
+    #commandInput {
+      flex: 1;
+      background: #000;
+      color: #0f0;
+      border: none;
+      font-family: monospace;
+      font-size: 1em;
+    }
+    #commandInput:focus {
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="consoleOutput">R-World Console Ready.</div>
+  <div id="commandBar">
+    <input type="text" id="commandInput" placeholder="" autofocus autocomplete="off" />
+  </div>
 
-exports.handler = async (event) => {
-  try {
-    const { prompt } = JSON.parse(event.body || '{}');
-    if (!prompt) return { statusCode: 400, body: 'Missing prompt' };
+  <script>
+    const supabaseUrl = 'https://bdiheyiblvkvkstwnjoo.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkaWhleWlibHZrdmtzdHduam9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5Njk0ODQsImV4cCI6MjA1OTU0NTQ4NH0.cyT-RshelVD5uCWYpNhB2xKE57K2Oh30HldjbcYAbDg';
+    const supabaseDB = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [
-          { role: "system", content: "You are INNA, a site-integrated dev assistant. You return commands and help build tools live." },
-          { role: "user", content: prompt }
-        ]
-      })
+    const input = document.getElementById('commandInput');
+    const output = document.getElementById('consoleOutput');
+
+    let history = [];
+    let historyIndex = 0;
+
+    async function runCommand(line) {
+      const name = line.split(' ')[0].replace('/', '');
+      history.push(line);
+      historyIndex = history.length;
+      logToConsole(`> ${line}`);
+
+      if (window.commands[name]) {
+        await window.commands[name](line);
+        return;
+      }
+
+      const { data, error } = await supabaseDB.from('command_defs').select('code').eq('name', name).single();
+      if (error || !data) {
+        logToConsole(`[ERROR] Command "${name}" not found.`);
+        return;
+      }
+
+      try {
+        eval(data.code);
+      } catch (e) {
+        logToConsole('[EXECUTION ERROR] ' + e.message);
+      }
+    }
+
+    function logToConsole(text) {
+      output.innerText += `\n${text}`;
+      output.scrollTop = output.scrollHeight;
+    }
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        runCommand(input.value);
+        input.value = '';
+      } else if (e.key === 'ArrowUp') {
+        if (historyIndex > 0) {
+          historyIndex--;
+          input.value = history[historyIndex];
+        }
+      } else if (e.key === 'ArrowDown') {
+        if (historyIndex < history.length - 1) {
+          historyIndex++;
+          input.value = history[historyIndex];
+        } else {
+          input.value = '';
+        }
+      }
     });
 
-    const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content || "No reply.";
+    async function tryAutorun() {
+      const { data, error } = await supabaseDB.from('settings').select('value').eq('key', 'autorun').single();
+      if (data && data.value) {
+        logToConsole('[AUTORUN] Executing: ' + data.value);
+        runCommand(data.value);
+      } else {
+        logToConsole('[AUTORUN] No autorun command found. Ready for /NEW.');
+      }
+    }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ reply })
+    window.commands = window.commands || {};
+
+    window.commands['NEWCODE'] = async function(line) {
+      const parts = line.split(' ');
+      const id = parts[1];
+      const lines = line.split('\n');
+      let raw = lines.slice(1).join('\n');
+      if (!raw.trim()) {
+        raw = parts.slice(2).join(' ');
+      }
+      const base64 = btoa(unescape(encodeURIComponent(raw)));
+
+      const { error } = await supabaseDB.from('code').upsert({
+        id,
+        source: raw,
+        compiled: base64,
+        type: 'js'
+      });
+
+      if (error) logToConsole('[NEWCODE ERROR] ' + error.message);
+      else logToConsole(`[NEWCODE] Stored and encoded '${id}'`);
     };
-  } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
+
+    window.commands['RUNCODE'] = async function(line) {
+      const id = line.split(' ')[1];
+      const { data, error } = await supabaseDB.from('code').select('*').eq('id', id).single();
+      if (error || !data) return logToConsole('[RUNCODE ERROR] ' + (error?.message || 'not found'));
+
+      try {
+        eval(atob(data.compiled));
+        logToConsole(`[RUNCODE] Executed '${id}'`);
+      } catch (e) {
+        logToConsole('[RUNCODE ERROR] ' + e.message);
+      }
     };
-  }
-};
+
+    window.commands['SHOWCODE'] = async function(line) {
+      const id = line.split(' ')[1];
+      const { data, error } = await supabaseDB.from('code').select('*').eq('id', id).single();
+      if (error || !data) return logToConsole('[SHOWCODE ERROR] ' + (error?.message || 'not found'));
+      logToConsole(`[SOURCE] ${data.id}:\n` + data.source);
+    };
+
+    window.commands['INNA'] = async function(line) {
+      const prompt = line.replace('/INNA', '').trim();
+      if (!prompt) {
+        logToConsole('[INNA] You need to say something.');
+        return;
+      }
+
+      logToConsole('[INNA] Thinking...');
+
+      try {
+        const res = await fetch("/.netlify/functions/inna", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt })
+        });
+
+        const { reply } = await res.json();
+        logToConsole(`[INNA] ${reply}`);
+      } catch (err) {
+        logToConsole(`[INNA ERROR] ${err.message}`);
+      }
+    };
+
+    tryAutorun();
+  </script>
+</body>
+</html>
