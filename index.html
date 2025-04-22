@@ -168,23 +168,13 @@
       logToConsole('[INNA] Thinking...');
 
       try {
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        const res = await fetch("/.netlify/functions/inna", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer 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"
-          },
-          body: JSON.stringify({
-            model: "gpt-3.5-turbo",
-            messages: [
-              { role: "system", content: "You are INNA, a live on-site development assistant. When asked, you help improve the system directly. You speak in short, clear sentences. You offer real command suggestions using slash commands. You do not apologize." },
-              { role: "user", content: prompt }
-            ]
-          })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt })
         });
 
-        const data = await response.json();
-        const reply = data.choices?.[0]?.message?.content || 'No reply';
+        const { reply } = await res.json();
         logToConsole(`[INNA] ${reply}`);
       } catch (err) {
         logToConsole(`[INNA ERROR] ${err.message}`);
